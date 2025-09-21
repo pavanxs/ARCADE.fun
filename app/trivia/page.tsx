@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Send, MessageCircle, Bot, User, Lightbulb } from 'lucide-react'
+import { MessageCircle, Lightbulb } from 'lucide-react'
 
 interface ChatMessage {
   id: string
@@ -166,7 +166,11 @@ export default function TriviaPage() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleChatSubmit(e as any)
+      const syntheticEvent = {
+        preventDefault: () => {},
+        currentTarget: e.currentTarget
+      } as React.FormEvent<HTMLFormElement>
+      handleChatSubmit(syntheticEvent)
     }
   }
 
@@ -364,10 +368,10 @@ export default function TriviaPage() {
                   <div className="space-y-2">
                     <CardTitle className="text-lg">Current Question</CardTitle>
                     <div className="flex gap-2">
-                      <Badge className={getDifficultyColor(currentQuestion.difficulty)} size="sm">
+                      <Badge className={getDifficultyColor(currentQuestion.difficulty)}>
                         {currentQuestion.difficulty}
                       </Badge>
-                      <Badge variant="outline" size="sm">{currentQuestion.category}</Badge>
+                      <Badge variant="outline">{currentQuestion.category}</Badge>
                     </div>
                   </div>
                 </CardHeader>

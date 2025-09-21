@@ -41,7 +41,7 @@ const getUserColor = (username: string) => {
 }
 
 export default function GlobalChat() {
-  const { address, isConnected: walletConnected } = useAccount()
+  const { address } = useAccount()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [username, setUsername] = useState('')
@@ -49,14 +49,10 @@ export default function GlobalChat() {
   const [userCount, setUserCount] = useState(0)
   const wsRef = useRef<WebSocket | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [isMuted, setIsMuted] = useState(false)
+  const [isMuted] = useState(false)
 
   const GLOBAL_ROOM_ID = 'global-chat'
 
-  // Helper function to normalize usernames for comparison
-  const normalizeUsername = (username: string) => {
-    return username.toLowerCase().trim()
-  }
 
   useEffect(() => {
     // Only use wallet address as username, don't allow guest users
@@ -99,7 +95,7 @@ export default function GlobalChat() {
           } else if (data.type === 'history') {
             // Load ALL messages from history including own messages
             console.log('Loading history for address:', address)
-            setMessages(data.messages.map((msg: any) => ({
+            setMessages(data.messages.map((msg: {id: string, content: string, sender: string, timestamp: string, roomId: string}) => ({
               ...msg,
               timestamp: new Date(msg.timestamp)
             })))
@@ -183,13 +179,6 @@ export default function GlobalChat() {
     return username
   }
 
-  const getRandomBadge = () => {
-    const badges = ['VIP', 'PRO', 'NEW', 'HOT']
-    const colors = ['yellow', 'purple', 'green', 'red']
-    const randomBadge = badges[Math.floor(Math.random() * badges.length)]
-    const randomColor = colors[Math.floor(Math.random() * colors.length)]
-    return { badge: randomBadge, color: randomColor }
-  }
 
   return (
     <div className="w-80 bg-card/50 backdrop-blur-sm border-l border-border/50 flex flex-col shadow-2xl h-full shrink-0">

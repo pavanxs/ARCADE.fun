@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -41,7 +41,7 @@ interface Achievement {
 }
 
 export default function MinimalSocialGaming() {
-  const [currentPlayer, setCurrentPlayer] = useState<Player>({
+  const [currentPlayer] = useState<Player>({
     id: '1',
     username: 'Player1',
     level: 15,
@@ -52,14 +52,14 @@ export default function MinimalSocialGaming() {
     isOnline: true
   })
 
-  const [gameRooms, setGameRooms] = useState<GameRoom[]>([
+  const [gameRooms] = useState<GameRoom[]>([
     { id: '1', name: 'Crypto Warriors Arena', players: 6, maxPlayers: 8, gameType: 'Battle', difficulty: 'Hard' },
     { id: '2', name: 'DeFi Strategy Zone', players: 4, maxPlayers: 6, gameType: 'Strategy', difficulty: 'Medium' },
     { id: '3', name: 'NFT Trading Hub', players: 12, maxPlayers: 16, gameType: 'Trading', difficulty: 'Easy' },
     { id: '4', name: 'Blockchain Puzzle', players: 3, maxPlayers: 4, gameType: 'Puzzle', difficulty: 'Hard' },
   ])
 
-  const [leaderboard, setLeaderboard] = useState<Player[]>([
+  const [leaderboard] = useState<Player[]>([
     { id: '2', username: 'CryptoKing', level: 28, xp: 2800, maxXp: 3000, wins: 156, losses: 44, isOnline: true },
     { id: '3', username: 'DeFiQueen', level: 25, xp: 2100, maxXp: 2500, wins: 134, losses: 32, isOnline: true },
     { id: '4', username: 'NFTMaster', level: 22, xp: 1800, maxXp: 2200, wins: 98, losses: 27, isOnline: false },
@@ -67,7 +67,7 @@ export default function MinimalSocialGaming() {
     { id: '1', username: 'Player1', level: 15, xp: 750, maxXp: 1000, wins: 42, losses: 18, isOnline: true },
   ])
 
-  const [achievements, setAchievements] = useState<Achievement[]>([
+  const [achievements] = useState<Achievement[]>([
     { id: '1', title: 'First Victory', description: 'Win your first game', icon: '🏆', unlocked: true, progress: 1, maxProgress: 1 },
     { id: '2', title: 'Winning Streak', description: 'Win 10 games in a row', icon: '🔥', unlocked: true, progress: 10, maxProgress: 10 },
     { id: '3', title: 'Social Butterfly', description: 'Play with 50 different players', icon: '🦋', unlocked: false, progress: 32, maxProgress: 50 },

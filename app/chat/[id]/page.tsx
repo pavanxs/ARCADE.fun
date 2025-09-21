@@ -85,7 +85,7 @@ export default function ChatRoom() {
           } else if (data.type === 'userCount') {
             setUserCount(data.count)
           } else if (data.type === 'history') {
-            setMessages(data.messages.map((msg: any) => ({
+            setMessages(data.messages.map((msg: {id: string, content: string, sender: string, timestamp: string, roomId: string}) => ({
               ...msg,
               timestamp: new Date(msg.timestamp)
             })))

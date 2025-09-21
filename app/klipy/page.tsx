@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { fetchTrendingGifs, type GifData } from '@/lib/klipy';
 
 export default function KlipyPage() {
@@ -74,9 +75,11 @@ KLIPY_CUSTOMER_ID=your_customer_id_here`}
             {gifs.map((gif) => (
               <div key={gif.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                 <div className="p-4">
-                  <img
+                  <Image
                     src={gif.gif}
                     alt={gif.title || 'GIF'}
+                    width={400}
+                    height={192}
                     className="w-full h-48 object-cover rounded-lg"
                     loading="lazy"
                   />
