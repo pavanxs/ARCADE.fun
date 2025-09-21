@@ -2,30 +2,32 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const freeGames = [
-  { src: "/game-images/Frame 5.png", alt: "Crypto Slots" },
-  { src: "/game-images/Frame 16.png", alt: "DeFi Poker" },
-  { src: "/game-images/Frame 17.png", alt: "NFT Blackjack" },
-  { src: "/game-images/Frame 18.png", alt: "Blockchain Roulette" },
-  { src: "/game-images/Frame 19.png", alt: "Token Bingo" },
-  { src: "/game-images/Frame 20.png", alt: "Crypto Dice" },
-  { src: "/game-images/Frame 22.png", alt: "Web3 Lottery" },
+  { src: "/game-images/Frame 5.png", alt: "Hybrid Trivia", route: "/trivia-ws" },
+  { src: "/game-images/Frame 16.png", alt: "WordPuzzle", route: "/wordpuzzle" },
+  { src: "/game-images/Frame 17.png", alt: "Mines", route: "/mines" },
+  { src: "/game-images/Frame 18.png", alt: "Online Mafia", route: "/mafia" },
+  { src: "/game-images/Frame 19.png", alt: "Guess the Thing", route: "/guess" },
+  { src: "/game-images/Frame 20.png", alt: "Act Like You Belong", route: "/act-belong" },
+  { src: "/game-images/Frame 22.png", alt: "Find the Spy", route: "/spy" },
 ];
 
 const paidGames = [
-  { src: "/game-images/Frame 23.png", alt: "High Stakes Poker" },
-  { src: "/game-images/Frame 24.png", alt: "Premium Slots" },
-  { src: "/game-images/Frame 26.png", alt: "VIP Blackjack" },
-  { src: "/game-images/Frame 27.png", alt: "Elite Roulette" },
-  { src: "/game-images/Frame 29.png", alt: "Diamond Baccarat" },
-  { src: "/game-images/Frame 30.png", alt: "Platinum Craps" },
+  { src: "/game-images/Frame 23.png", alt: "Deception Protocol", route: "/deception" },
+  { src: "/game-images/Frame 24.png", alt: "Trust", route: "/trust" },
+  { src: "/game-images/Frame 26.png", alt: "Bluff and Bet", route: "/bluff-bet" },
+  { src: "/game-images/Frame 27.png", alt: "Elite Roulette", route: "/trivia" },
+  { src: "/game-images/Frame 29.png", alt: "Diamond Baccarat", route: "/trivia" },
+  { src: "/game-images/Frame 30.png", alt: "Platinum Craps", route: "/trivia" },
 ];
 
 export default function Home() {
   const [hoveredIndex, setHoveredIndex] = useState<string | null>(null);
+  const router = useRouter();
 
-  const GameCard = ({ game, section, index }: { game: { src: string; alt: string }, section: string, index: number }) => {
+  const GameCard = ({ game, section, index }: { game: { src: string; alt: string; route?: string }, section: string, index: number }) => {
     const cardId = `${section}-${index}`;
     
     return (
@@ -33,6 +35,7 @@ export default function Home() {
         className="group relative cursor-pointer"
         onMouseEnter={() => setHoveredIndex(cardId)}
         onMouseLeave={() => setHoveredIndex(null)}
+        onClick={() => router.push(game.route || '/trivia')}
       >
         <div className="relative overflow-hidden rounded-xl bg-card border border-border transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-primary/50">
           <Image

@@ -6,21 +6,22 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Users, Plus, Play, Clock, Search, Trophy } from 'lucide-react'
+import { Users, Plus, Play, Clock, Bomb, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-interface TriviaRoom {
+interface MinesRoom {
   id: string
   name: string
   host: string
   players: Player[]
   maxPlayers: number
   isActive: boolean
-  category: string
-  difficulty: 'easy' | 'medium' | 'hard'
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert'
+  gridSize: string
+  mineCount: number
   createdAt: Date
   gameStarted: boolean
 }
@@ -32,112 +33,110 @@ interface Player {
   isHost: boolean
   isReady: boolean
   avatar: string
+  gamesWon: number
 }
 
-const ROOM_CATEGORIES = [
-  'General Knowledge',
-  'Science',
-  'Technology',
-  'History',
-  'Sports',
-  'Entertainment',
-  'Geography',
-  'Literature'
-]
+const DIFFICULTY_SETTINGS = {
+  easy: { gridSize: '9x9', mineCount: 10 },
+  medium: { gridSize: '16x16', mineCount: 40 },
+  hard: { gridSize: '16x30', mineCount: 99 },
+  expert: { gridSize: '20x24', mineCount: 130 }
+}
 
-// Sample rooms for demo
-const sampleRooms: TriviaRoom[] = [
+// Sample rooms for Mines
+const sampleRooms: MinesRoom[] = [
   {
     id: '1',
-    name: 'Science Masters',
-    host: 'Alex',
+    name: 'Beginner Minefield',
+    host: 'MineSweeper',
     players: [
-      { id: '1', username: 'Alex', score: 0, isHost: true, isReady: true, avatar: 'A' },
-      { id: '2', username: 'Sarah', score: 0, isHost: false, isReady: false, avatar: 'S' }
+      { id: '1', username: 'MineSweeper', score: 0, isHost: true, isReady: true, avatar: 'M', gamesWon: 15 },
+      { id: '2', username: 'BombDefuser', score: 0, isHost: false, isReady: false, avatar: 'B', gamesWon: 8 },
+      { id: '3', username: 'SafeStep', score: 0, isHost: false, isReady: true, avatar: 'S', gamesWon: 3 }
     ],
-    maxPlayers: 6,
+    maxPlayers: 4,
     isActive: true,
-    category: 'Science',
-    difficulty: 'medium',
+    difficulty: 'easy',
+    gridSize: '9x9',
+    mineCount: 10,
     createdAt: new Date(Date.now() - 300000),
     gameStarted: false
   },
   {
     id: '2',
-    name: 'Quick Quiz',
-    host: 'Mike',
+    name: 'Speed Mining',
+    host: 'FastClicker',
     players: [
-      { id: '3', username: 'Mike', score: 0, isHost: true, isReady: true, avatar: 'M' },
-      { id: '4', username: 'Emma', score: 0, isHost: false, isReady: true, avatar: 'E' },
-      { id: '5', username: 'John', score: 0, isHost: false, isReady: false, avatar: 'J' }
+      { id: '4', username: 'FastClicker', score: 245, isHost: true, isReady: true, avatar: 'F', gamesWon: 12 },
+      { id: '5', username: 'QuickSolve', score: 189, isHost: false, isReady: true, avatar: 'Q', gamesWon: 7 }
     ],
-    maxPlayers: 4,
+    maxPlayers: 6,
     isActive: true,
-    category: 'General Knowledge',
-    difficulty: 'easy',
+    difficulty: 'medium',
+    gridSize: '16x16',
+    mineCount: 40,
     createdAt: new Date(Date.now() - 600000),
-    gameStarted: false
+    gameStarted: true
   },
   {
     id: '3',
-    name: 'Tech Trivia Pro',
-    host: 'DevMaster',
+    name: 'Expert Challenge',
+    host: 'MinesMaster',
     players: [
-      { id: '6', username: 'DevMaster', score: 45, isHost: true, isReady: true, avatar: 'D' },
-      { id: '7', username: 'CodeNinja', score: 38, isHost: false, isReady: true, avatar: 'C' },
-      { id: '8', username: 'WebWiz', score: 42, isHost: false, isReady: true, avatar: 'W' }
+      { id: '6', username: 'MinesMaster', score: 0, isHost: true, isReady: true, avatar: 'M', gamesWon: 45 },
+      { id: '7', username: 'ProSweeper', score: 0, isHost: false, isReady: false, avatar: 'P', gamesWon: 32 },
+      { id: '8', username: 'BombExpert', score: 0, isHost: false, isReady: true, avatar: 'B', gamesWon: 28 },
+      { id: '9', username: 'MineHunter', score: 0, isHost: false, isReady: false, avatar: 'M', gamesWon: 19 }
     ],
-    maxPlayers: 5,
+    maxPlayers: 8,
     isActive: true,
-    category: 'Technology',
-    difficulty: 'hard',
+    difficulty: 'expert',
+    gridSize: '20x24',
+    mineCount: 130,
     createdAt: new Date(Date.now() - 1200000),
-    gameStarted: true
+    gameStarted: false
   }
 ]
 
-export default function TriviaLobby() {
-  const [rooms, setRooms] = useState<TriviaRoom[]>(sampleRooms)
+export default function MinesLobby() {
+  const [rooms, setRooms] = useState<MinesRoom[]>(sampleRooms)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterCategory, setFilterCategory] = useState('all')
   const [filterDifficulty, setFilterDifficulty] = useState('all')
   const [showCreateRoom, setShowCreateRoom] = useState(false)
-  const [currentUser] = useState(`Player${Math.floor(Math.random() * 1000)}`)
+  const [currentUser] = useState(`Miner${Math.floor(Math.random() * 1000)}`)
   const router = useRouter()
 
   // Create room form state
   const [newRoomName, setNewRoomName] = useState('')
-  const [newRoomCategory, setNewRoomCategory] = useState('')
-  const [newRoomDifficulty, setNewRoomDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
+  const [newRoomDifficulty, setNewRoomDifficulty] = useState<'easy' | 'medium' | 'hard' | 'expert'>('medium')
   const [newRoomMaxPlayers, setNewRoomMaxPlayers] = useState(4)
 
   const filteredRooms = rooms.filter(room => {
     const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         room.host.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         room.category.toLowerCase().includes(searchTerm.toLowerCase())
+                         room.host.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesCategory = filterCategory === 'all' || room.category === filterCategory
     const matchesDifficulty = filterDifficulty === 'all' || room.difficulty === filterDifficulty
     
-    return matchesSearch && matchesCategory && matchesDifficulty && room.isActive
+    return matchesSearch && matchesDifficulty && room.isActive
   })
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy': return 'bg-green-500'
       case 'medium': return 'bg-yellow-500'
-      case 'hard': return 'bg-red-500'
+      case 'hard': return 'bg-orange-500'
+      case 'expert': return 'bg-red-500'
       default: return 'bg-gray-500'
     }
   }
 
-  const getStatusColor = (room: TriviaRoom) => {
+  const getStatusColor = (room: MinesRoom) => {
     if (room.gameStarted) return 'bg-blue-500'
     if (room.players.length >= room.maxPlayers) return 'bg-gray-500'
     return 'bg-green-500'
   }
 
-  const getStatusText = (room: TriviaRoom) => {
+  const getStatusText = (room: MinesRoom) => {
     if (room.gameStarted) return 'In Progress'
     if (room.players.length >= room.maxPlayers) return 'Full'
     return 'Waiting'
@@ -158,9 +157,10 @@ export default function TriviaLobby() {
   }
 
   const handleCreateRoom = () => {
-    if (!newRoomName.trim() || !newRoomCategory) return
+    if (!newRoomName.trim()) return
 
-    const newRoom: TriviaRoom = {
+    const settings = DIFFICULTY_SETTINGS[newRoomDifficulty]
+    const newRoom: MinesRoom = {
       id: Date.now().toString(),
       name: newRoomName.trim(),
       host: currentUser,
@@ -171,13 +171,15 @@ export default function TriviaLobby() {
           score: 0, 
           isHost: true, 
           isReady: true, 
-          avatar: currentUser[0].toUpperCase() 
+          avatar: currentUser[0].toUpperCase(),
+          gamesWon: 0
         }
       ],
       maxPlayers: newRoomMaxPlayers,
       isActive: true,
-      category: newRoomCategory,
       difficulty: newRoomDifficulty,
+      gridSize: settings.gridSize,
+      mineCount: settings.mineCount,
       createdAt: new Date(),
       gameStarted: false
     }
@@ -187,12 +189,11 @@ export default function TriviaLobby() {
     
     // Reset form
     setNewRoomName('')
-    setNewRoomCategory('')
-    setNewRoomDifficulty('easy')
+    setNewRoomDifficulty('medium')
     setNewRoomMaxPlayers(4)
 
     // Navigate to the room
-    router.push(`/trivia/room/${newRoom.id}`)
+    router.push(`/mines/room/${newRoom.id}`)
   }
 
   const handleJoinRoom = (roomId: string) => {
@@ -209,7 +210,7 @@ export default function TriviaLobby() {
       return
     }
 
-    // Add player to room (in real app, this would be handled by backend)
+    // Add player to room
     const updatedRooms = rooms.map(r => {
       if (r.id === roomId) {
         return {
@@ -222,7 +223,8 @@ export default function TriviaLobby() {
               score: 0,
               isHost: false,
               isReady: false,
-              avatar: currentUser[0].toUpperCase()
+              avatar: currentUser[0].toUpperCase(),
+              gamesWon: 0
             }
           ]
         }
@@ -231,7 +233,7 @@ export default function TriviaLobby() {
     })
 
     setRooms(updatedRooms)
-    router.push(`/trivia/room/${roomId}`)
+    router.push(`/mines/room/${roomId}`)
   }
 
   return (
@@ -240,8 +242,8 @@ export default function TriviaLobby() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">🧠 Trivia Lobby</h1>
-            <p className="text-muted-foreground">Join a room or create your own trivia challenge!</p>
+            <h1 className="text-4xl font-bold text-foreground mb-2">💣 Mines Lobby</h1>
+            <p className="text-muted-foreground">Navigate the minefield and compete with friends!</p>
           </div>
           
           <div className="flex items-center gap-4 mt-4 md:mt-0">
@@ -259,7 +261,7 @@ export default function TriviaLobby() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Create New Room</DialogTitle>
+                  <DialogTitle>Create Mines Room</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -273,56 +275,39 @@ export default function TriviaLobby() {
                   </div>
                   
                   <div>
-                    <Label>Category</Label>
-                    <Select value={newRoomCategory} onValueChange={setNewRoomCategory}>
+                    <Label>Difficulty</Label>
+                    <Select value={newRoomDifficulty} onValueChange={(value: 'easy' | 'medium' | 'hard' | 'expert') => setNewRoomDifficulty(value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {ROOM_CATEGORIES.map(category => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="easy">Easy (9x9, 10 mines)</SelectItem>
+                        <SelectItem value="medium">Medium (16x16, 40 mines)</SelectItem>
+                        <SelectItem value="hard">Hard (16x30, 99 mines)</SelectItem>
+                        <SelectItem value="expert">Expert (20x24, 130 mines)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Difficulty</Label>
-                      <Select value={newRoomDifficulty} onValueChange={(value: 'easy' | 'medium' | 'hard') => setNewRoomDifficulty(value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="easy">Easy</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="hard">Hard</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>Max Players</Label>
-                      <Select value={newRoomMaxPlayers.toString()} onValueChange={(value) => setNewRoomMaxPlayers(parseInt(value))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="2">2 Players</SelectItem>
-                          <SelectItem value="4">4 Players</SelectItem>
-                          <SelectItem value="6">6 Players</SelectItem>
-                          <SelectItem value="8">8 Players</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div>
+                    <Label>Max Players</Label>
+                    <Select value={newRoomMaxPlayers.toString()} onValueChange={(value) => setNewRoomMaxPlayers(parseInt(value))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2">2 Players</SelectItem>
+                        <SelectItem value="4">4 Players</SelectItem>
+                        <SelectItem value="6">6 Players</SelectItem>
+                        <SelectItem value="8">8 Players</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <Button 
                     onClick={handleCreateRoom} 
                     className="w-full"
-                    disabled={!newRoomName.trim() || !newRoomCategory}
+                    disabled={!newRoomName.trim()}
                   >
                     Create Room
                   </Button>
@@ -346,20 +331,6 @@ export default function TriviaLobby() {
             </div>
           </div>
           
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {ROOM_CATEGORIES.map(category => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
           <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
             <SelectTrigger className="w-full md:w-48">
               <SelectValue placeholder="All Difficulties" />
@@ -369,6 +340,7 @@ export default function TriviaLobby() {
               <SelectItem value="easy">Easy</SelectItem>
               <SelectItem value="medium">Medium</SelectItem>
               <SelectItem value="hard">Hard</SelectItem>
+              <SelectItem value="expert">Expert</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -406,7 +378,7 @@ export default function TriviaLobby() {
                   <p className="text-sm text-muted-foreground">Games Playing</p>
                   <p className="text-2xl font-bold">{rooms.filter(r => r.gameStarted).length}</p>
                 </div>
-                <Trophy className="w-8 h-8 text-yellow-500" />
+                <Bomb className="w-8 h-8 text-red-500" />
               </div>
             </CardContent>
           </Card>
@@ -453,7 +425,8 @@ export default function TriviaLobby() {
                       </div>
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                        <span>🎯 {room.category}</span>
+                        <span>💣 {room.mineCount} mines</span>
+                        <span>📏 {room.gridSize}</span>
                         <span>👑 {room.host}</span>
                         <span>⏰ {formatTimeAgo(room.createdAt)}</span>
                       </div>
@@ -503,3 +476,4 @@ export default function TriviaLobby() {
     </div>
   )
 }
+

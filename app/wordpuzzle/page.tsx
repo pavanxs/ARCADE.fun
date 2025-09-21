@@ -6,21 +6,22 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Users, Plus, Play, Clock, Search, Trophy } from 'lucide-react'
+import { Users, Plus, Play, Clock, Search, Zap } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-interface TriviaRoom {
+interface WordPuzzleRoom {
   id: string
   name: string
   host: string
   players: Player[]
   maxPlayers: number
   isActive: boolean
-  category: string
   difficulty: 'easy' | 'medium' | 'hard'
+  wordCount: number
+  timeLimit: number
   createdAt: Date
   gameStarted: boolean
 }
@@ -34,92 +35,83 @@ interface Player {
   avatar: string
 }
 
-const ROOM_CATEGORIES = [
-  'General Knowledge',
-  'Science',
-  'Technology',
-  'History',
-  'Sports',
-  'Entertainment',
-  'Geography',
-  'Literature'
-]
-
-// Sample rooms for demo
-const sampleRooms: TriviaRoom[] = [
+// Sample rooms for WordPuzzle
+const sampleRooms: WordPuzzleRoom[] = [
   {
     id: '1',
-    name: 'Science Masters',
-    host: 'Alex',
+    name: 'Word Masters Challenge',
+    host: 'WordWiz',
     players: [
-      { id: '1', username: 'Alex', score: 0, isHost: true, isReady: true, avatar: 'A' },
-      { id: '2', username: 'Sarah', score: 0, isHost: false, isReady: false, avatar: 'S' }
+      { id: '1', username: 'WordWiz', score: 0, isHost: true, isReady: true, avatar: 'W' },
+      { id: '2', username: 'PuzzleKing', score: 0, isHost: false, isReady: false, avatar: 'P' },
+      { id: '3', username: 'LetterLover', score: 0, isHost: false, isReady: true, avatar: 'L' }
     ],
     maxPlayers: 6,
     isActive: true,
-    category: 'Science',
     difficulty: 'medium',
+    wordCount: 50,
+    timeLimit: 300,
     createdAt: new Date(Date.now() - 300000),
     gameStarted: false
   },
   {
     id: '2',
-    name: 'Quick Quiz',
-    host: 'Mike',
+    name: 'Quick Word Hunt',
+    host: 'SpeedReader',
     players: [
-      { id: '3', username: 'Mike', score: 0, isHost: true, isReady: true, avatar: 'M' },
-      { id: '4', username: 'Emma', score: 0, isHost: false, isReady: true, avatar: 'E' },
-      { id: '5', username: 'John', score: 0, isHost: false, isReady: false, avatar: 'J' }
+      { id: '4', username: 'SpeedReader', score: 25, isHost: true, isReady: true, avatar: 'S' },
+      { id: '5', username: 'FastFinder', score: 18, isHost: false, isReady: true, avatar: 'F' }
     ],
     maxPlayers: 4,
     isActive: true,
-    category: 'General Knowledge',
     difficulty: 'easy',
+    wordCount: 30,
+    timeLimit: 180,
     createdAt: new Date(Date.now() - 600000),
-    gameStarted: false
+    gameStarted: true
   },
   {
     id: '3',
-    name: 'Tech Trivia Pro',
-    host: 'DevMaster',
+    name: 'Expert Vocabulary',
+    host: 'DictMaster',
     players: [
-      { id: '6', username: 'DevMaster', score: 45, isHost: true, isReady: true, avatar: 'D' },
-      { id: '7', username: 'CodeNinja', score: 38, isHost: false, isReady: true, avatar: 'C' },
-      { id: '8', username: 'WebWiz', score: 42, isHost: false, isReady: true, avatar: 'W' }
+      { id: '6', username: 'DictMaster', score: 0, isHost: true, isReady: true, avatar: 'D' },
+      { id: '7', username: 'WordSmith', score: 0, isHost: false, isReady: false, avatar: 'W' },
+      { id: '8', username: 'VocabPro', score: 0, isHost: false, isReady: true, avatar: 'V' },
+      { id: '9', username: 'LexiconLord', score: 0, isHost: false, isReady: false, avatar: 'L' }
     ],
-    maxPlayers: 5,
+    maxPlayers: 8,
     isActive: true,
-    category: 'Technology',
     difficulty: 'hard',
+    wordCount: 100,
+    timeLimit: 600,
     createdAt: new Date(Date.now() - 1200000),
-    gameStarted: true
+    gameStarted: false
   }
 ]
 
-export default function TriviaLobby() {
-  const [rooms, setRooms] = useState<TriviaRoom[]>(sampleRooms)
+export default function WordPuzzleLobby() {
+  const [rooms, setRooms] = useState<WordPuzzleRoom[]>(sampleRooms)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterCategory, setFilterCategory] = useState('all')
   const [filterDifficulty, setFilterDifficulty] = useState('all')
   const [showCreateRoom, setShowCreateRoom] = useState(false)
-  const [currentUser] = useState(`Player${Math.floor(Math.random() * 1000)}`)
+  const [currentUser] = useState(`WordPlayer${Math.floor(Math.random() * 1000)}`)
   const router = useRouter()
 
   // Create room form state
   const [newRoomName, setNewRoomName] = useState('')
-  const [newRoomCategory, setNewRoomCategory] = useState('')
-  const [newRoomDifficulty, setNewRoomDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
+  const [newRoomDifficulty, setNewRoomDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
   const [newRoomMaxPlayers, setNewRoomMaxPlayers] = useState(4)
+  const [newRoomWordCount, setNewRoomWordCount] = useState(50)
+  const [newRoomTimeLimit, setNewRoomTimeLimit] = useState(300)
 
   const filteredRooms = rooms.filter(room => {
     const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         room.host.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         room.category.toLowerCase().includes(searchTerm.toLowerCase())
+                         room.host.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesCategory = filterCategory === 'all' || room.category === filterCategory
     const matchesDifficulty = filterDifficulty === 'all' || room.difficulty === filterDifficulty
     
-    return matchesSearch && matchesCategory && matchesDifficulty && room.isActive
+    return matchesSearch && matchesDifficulty && room.isActive
   })
 
   const getDifficultyColor = (difficulty: string) => {
@@ -131,13 +123,13 @@ export default function TriviaLobby() {
     }
   }
 
-  const getStatusColor = (room: TriviaRoom) => {
+  const getStatusColor = (room: WordPuzzleRoom) => {
     if (room.gameStarted) return 'bg-blue-500'
     if (room.players.length >= room.maxPlayers) return 'bg-gray-500'
     return 'bg-green-500'
   }
 
-  const getStatusText = (room: TriviaRoom) => {
+  const getStatusText = (room: WordPuzzleRoom) => {
     if (room.gameStarted) return 'In Progress'
     if (room.players.length >= room.maxPlayers) return 'Full'
     return 'Waiting'
@@ -157,10 +149,16 @@ export default function TriviaLobby() {
     return `${Math.floor(diffHours / 24)}d ago`
   }
 
-  const handleCreateRoom = () => {
-    if (!newRoomName.trim() || !newRoomCategory) return
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
-    const newRoom: TriviaRoom = {
+  const handleCreateRoom = () => {
+    if (!newRoomName.trim()) return
+
+    const newRoom: WordPuzzleRoom = {
       id: Date.now().toString(),
       name: newRoomName.trim(),
       host: currentUser,
@@ -176,8 +174,9 @@ export default function TriviaLobby() {
       ],
       maxPlayers: newRoomMaxPlayers,
       isActive: true,
-      category: newRoomCategory,
       difficulty: newRoomDifficulty,
+      wordCount: newRoomWordCount,
+      timeLimit: newRoomTimeLimit,
       createdAt: new Date(),
       gameStarted: false
     }
@@ -187,12 +186,13 @@ export default function TriviaLobby() {
     
     // Reset form
     setNewRoomName('')
-    setNewRoomCategory('')
-    setNewRoomDifficulty('easy')
+    setNewRoomDifficulty('medium')
     setNewRoomMaxPlayers(4)
+    setNewRoomWordCount(50)
+    setNewRoomTimeLimit(300)
 
     // Navigate to the room
-    router.push(`/trivia/room/${newRoom.id}`)
+    router.push(`/wordpuzzle/room/${newRoom.id}`)
   }
 
   const handleJoinRoom = (roomId: string) => {
@@ -209,7 +209,7 @@ export default function TriviaLobby() {
       return
     }
 
-    // Add player to room (in real app, this would be handled by backend)
+    // Add player to room
     const updatedRooms = rooms.map(r => {
       if (r.id === roomId) {
         return {
@@ -231,7 +231,7 @@ export default function TriviaLobby() {
     })
 
     setRooms(updatedRooms)
-    router.push(`/trivia/room/${roomId}`)
+    router.push(`/wordpuzzle/room/${roomId}`)
   }
 
   return (
@@ -240,8 +240,8 @@ export default function TriviaLobby() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">🧠 Trivia Lobby</h1>
-            <p className="text-muted-foreground">Join a room or create your own trivia challenge!</p>
+            <h1 className="text-4xl font-bold text-foreground mb-2">🔤 WordPuzzle Lobby</h1>
+            <p className="text-muted-foreground">Find words, compete with friends, and test your vocabulary!</p>
           </div>
           
           <div className="flex items-center gap-4 mt-4 md:mt-0">
@@ -259,7 +259,7 @@ export default function TriviaLobby() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Create New Room</DialogTitle>
+                  <DialogTitle>Create WordPuzzle Room</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -270,22 +270,6 @@ export default function TriviaLobby() {
                       value={newRoomName}
                       onChange={(e) => setNewRoomName(e.target.value)}
                     />
-                  </div>
-                  
-                  <div>
-                    <Label>Category</Label>
-                    <Select value={newRoomCategory} onValueChange={setNewRoomCategory}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROOM_CATEGORIES.map(category => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -319,10 +303,42 @@ export default function TriviaLobby() {
                     </div>
                   </div>
                   
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Words to Find</Label>
+                      <Select value={newRoomWordCount.toString()} onValueChange={(value) => setNewRoomWordCount(parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="20">20 Words</SelectItem>
+                          <SelectItem value="30">30 Words</SelectItem>
+                          <SelectItem value="50">50 Words</SelectItem>
+                          <SelectItem value="100">100 Words</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Time Limit</Label>
+                      <Select value={newRoomTimeLimit.toString()} onValueChange={(value) => setNewRoomTimeLimit(parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="180">3 minutes</SelectItem>
+                          <SelectItem value="300">5 minutes</SelectItem>
+                          <SelectItem value="600">10 minutes</SelectItem>
+                          <SelectItem value="900">15 minutes</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
                   <Button 
                     onClick={handleCreateRoom} 
                     className="w-full"
-                    disabled={!newRoomName.trim() || !newRoomCategory}
+                    disabled={!newRoomName.trim()}
                   >
                     Create Room
                   </Button>
@@ -345,20 +361,6 @@ export default function TriviaLobby() {
               />
             </div>
           </div>
-          
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {ROOM_CATEGORIES.map(category => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           
           <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
             <SelectTrigger className="w-full md:w-48">
@@ -406,7 +408,7 @@ export default function TriviaLobby() {
                   <p className="text-sm text-muted-foreground">Games Playing</p>
                   <p className="text-2xl font-bold">{rooms.filter(r => r.gameStarted).length}</p>
                 </div>
-                <Trophy className="w-8 h-8 text-yellow-500" />
+                <Zap className="w-8 h-8 text-yellow-500" />
               </div>
             </CardContent>
           </Card>
@@ -453,7 +455,8 @@ export default function TriviaLobby() {
                       </div>
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                        <span>🎯 {room.category}</span>
+                        <span>🎯 {room.wordCount} words</span>
+                        <span>⏱️ {formatTime(room.timeLimit)}</span>
                         <span>👑 {room.host}</span>
                         <span>⏰ {formatTimeAgo(room.createdAt)}</span>
                       </div>
@@ -503,3 +506,4 @@ export default function TriviaLobby() {
     </div>
   )
 }
+
